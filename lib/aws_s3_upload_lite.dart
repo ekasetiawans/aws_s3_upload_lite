@@ -201,7 +201,7 @@ class AwsS3 {
       uploadKey = '$filename';
     }
 
-    final stream = http.ByteStream(convertFileToCast(file));
+    final stream = http.ByteStream.fromBytes(file);
     final length = file.lengthInBytes;
 
     final uri = Uri.parse(ep);
