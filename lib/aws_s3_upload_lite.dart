@@ -189,7 +189,11 @@ class AwsS3 {
       httpStr += 's';
     }
 
-    final ep = endpoint ?? '$httpStr://$bucket.s3.$region.amazonaws.com';
+    final domain = endpoint != null
+        ? '$httpStr://$bucket.$endpoint'
+        : '$httpStr://$bucket.s3.$region.amazonaws.com';
+
+    final ep = domain;
 
     String? uploadKey;
 
@@ -202,12 +206,16 @@ class AwsS3 {
     }
 
     final stream = http.ByteStream.fromBytes(file);
-    final length = file.lengthInBytes;
+    final length = file.length;
 
     final uri = Uri.parse(ep);
     final req = http.MultipartRequest("POST", uri);
-    final multipartFile =
-        http.MultipartFile('file', stream, length, filename: filename);
+    final multipartFile = http.MultipartFile(
+      'file',
+      stream,
+      length,
+      filename: filename,
+    );
 
     // Convert metadata to AWS-compliant params before generating the policy.
     final metadataParams = _convertMetadataToParams(metadata);
@@ -223,6 +231,8 @@ class AwsS3 {
       region: region,
       metadata: metadataParams,
     );
+
+    print(policy);
 
     final signingKey =
         SigV4.calculateSigningKey(secretKey, policy.datetime, region, 's3');
@@ -245,11 +255,9 @@ class AwsS3 {
 
     try {
       final res = await req.send();
-
-      return res.statusCode.toString();
+      return '$ep/$destDir/$filename';
     } catch (e) {
-      print(e);
-      return 'Failed to upload to AWS, with exception:';
+      rethrow;
     }
   }
 }
