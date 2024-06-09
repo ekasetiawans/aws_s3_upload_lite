@@ -4,18 +4,20 @@ import 'dart:io';
 
 import 'package:amazon_cognito_identity_dart_2/sig_v4.dart';
 import 'package:flutter/foundation.dart';
-import '../enum/acl.dart';
-import '../src/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:recase/recase.dart';
 
+import '../enum/acl.dart';
+import '../src/utils.dart';
 import './src/policy.dart';
 
 /// Convenience class for uploading files to AWS S3
 class AwsS3 {
   /// Upload a file, returning the status code 200/204 on success.
   static Future<String> uploadFile({
+    String? endpoint,
+
     /// AWS access key
     required String accessKey,
 
@@ -29,7 +31,7 @@ class AwsS3 {
     required File file,
 
     /// The AWS region. Must be formatted correctly, e.g. us-west-1
-    required String region,
+    String region = '',
 
     /// The path to upload the file to (e.g. "uploads/public"). Defaults to the root "directory"
     required String destDir,
@@ -57,7 +59,7 @@ class AwsS3 {
     if (useSSL) {
       httpStr += 's';
     }
-    final endpoint = '$httpStr://$bucket.s3.$region.amazonaws.com';
+    final ep = endpoint ?? '$httpStr://$bucket.s3.$region.amazonaws.com';
 
     String? uploadKey;
 
@@ -72,7 +74,7 @@ class AwsS3 {
     final stream = http.ByteStream(Stream.castFrom(file.openRead()));
     final length = await file.length();
 
-    final uri = Uri.parse(endpoint);
+    final uri = Uri.parse(ep);
     final req = http.MultipartRequest("POST", uri);
     final multipartFile = http.MultipartFile('file', stream, length,
         filename: path.basename(file.path));
@@ -143,6 +145,8 @@ class AwsS3 {
 
   /// Upload a Uint8List, returning the status code 200/204 on success.
   static Future<String> uploadUint8List({
+    String? endpoint,
+
     /// AWS access key
     required String accessKey,
 
@@ -156,7 +160,7 @@ class AwsS3 {
     required Uint8List file,
 
     /// The AWS region. Must be formatted correctly, e.g. us-west-1
-    required String region,
+    String region = '',
 
     /// The path to upload the file to (e.g. "uploads/public"). Defaults to the root "directory"
     required String destDir,
@@ -185,7 +189,7 @@ class AwsS3 {
       httpStr += 's';
     }
 
-    final endpoint = '$httpStr://$bucket.s3.$region.amazonaws.com';
+    final ep = endpoint ?? '$httpStr://$bucket.s3.$region.amazonaws.com';
 
     String? uploadKey;
 
@@ -200,7 +204,7 @@ class AwsS3 {
     final stream = http.ByteStream(convertFileToCast(file));
     final length = file.lengthInBytes;
 
-    final uri = Uri.parse(endpoint);
+    final uri = Uri.parse(ep);
     final req = http.MultipartRequest("POST", uri);
     final multipartFile =
         http.MultipartFile('file', stream, length, filename: filename);
